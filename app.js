@@ -279,3 +279,33 @@ function getDistanceFromLatLng(lat1, lng1, lat2, lng2, miles) { // miles optiona
         return d;
     } //return km
 }
+
+let mapSize = "mid";
+
+document.querySelector("#maximize").addEventListener("click", () => {
+    console.log(mapSize);
+    let mapFrame = document.querySelector("#map-frame");
+    if (mapSize == "mid") {
+        mapFrame.style.height = "70%";
+        mapFrame.style.width = "70%";
+        mapSize = "max";
+    } else if (mapSize == "min") {
+        mapFrame.style.height = "40%";
+        mapFrame.style.width = "40%";
+        mapSize = "mid";
+    }
+    console.log(mapSize);
+});
+
+document.querySelector("#minimize").addEventListener("click", () => {
+    let mapFrame = document.querySelector("#map-frame");
+    if (mapSize == "mid") {
+        mapFrame.style.height = "15%";
+        mapFrame.style.width = "15%";
+        mapSize = "min";
+    } else if (mapSize == "max") {
+        mapFrame.style.height = "40%";
+        mapFrame.style.width = "40%";
+        mapSize = "mid";
+    }
+});
