@@ -2,6 +2,7 @@
  * Click the map to set a new location for the Street View camera.
  */
 
+
 let coordinateSelections = [{
         name: "North America",
         latitude: {
@@ -46,17 +47,17 @@ let coordinateSelections = [{
             max: 50,
         }
     },
-    {
-        name: "West Africa",
-        latitude: {
-            min: 2,
-            max: 19
-        },
-        longitude: {
-            min: -27,
-            max: 10
-        }
-    },
+    // {
+    //     name: "West Africa",
+    //     latitude: {
+    //         min: 2,
+    //         max: 19
+    //     },
+    //     longitude: {
+    //         min: -27,
+    //         max: 10
+    //     }
+    // },
     {
         name: "Northern Europe",
         latitude: {
@@ -183,28 +184,11 @@ function getRandomCoordinates(arr) {
     return randomCoord;
 }
 
-console.log(getRandomCoordinates(coordinateSelections));
-
 let map;
 let panorama;
 
-//  *** do a metadata request to see if the random coordinates are within 100km of a google street view panorama.
-
-
-// const Http = new XMLHttpRequest();
-// const url = `https://maps.googleapis.com/maps/api/streetview/metadata?location=${randomCoordinates}&key=AIzaSyCBj7T8CMAzR8xOL2Rfewv-NFLP-F1JCYs`;
-// Http.open("GET", url);
-// Http.send();
-
-// Http.onreadystatechange = (e) => {
-//     console.log(randomCoordinates);
-//     console.log(Http.responseText);
-// };
-
-
-
 function initMap() {
-    const berkeley = getRandomCoordinates(coordinateSelections);
+    const randomLocation = getRandomCoordinates(coordinateSelections);
     const sv = new google.maps.StreetViewService();
     panorama = new google.maps.StreetViewPanorama(
         document.getElementById("pano")
@@ -215,54 +199,83 @@ function initMap() {
             lat: 0,
             lng: 0
         },
-        zoom: 1,
+        zoom: 2,
         streetViewControl: false,
     });
-    let coverageLayer = new google.maps.StreetViewCoverageLayer();
-    coverageLayer.setMap(map);
-    // Set the initial Street View camera to the center of the map
+    // Set the initial Street View camera to the center of the map  
     sv.getPanorama({
-        location: berkeley,
+        location: randomLocation,
         radius: 1000000,
         preference: "nearest",
         source: "outdoor",
     }, processSVData);
-    // map.addEventListener('click', function(mapsMouseEvent){
 
-    // })
-    // add an click event listener, when map is clicked, get the location.
 }
 
 function processSVData(data, status) {
     if (status === "OK") {
         const location = data.location;
-        const marker = new google.maps.Marker({
-            position: location.latLng,
-            map,
-            title: location.description,
-        });
+        // random coord obj
+        svLocation = {
+            lat: data.location.latLng.lat(),
+            lng: data.location.latLng.lng()
+        };
         panorama.setPano(location.pano);
         panorama.setPov({
             heading: 270,
             pitch: 0,
         });
         panorama.setVisible(true);
-        marker.addListener("click", () => {
-            const markerPanoID = location.pano;
-            // Set the Pano to use the passed panoID.
-            panorama.setPano(markerPanoID);
-            panorama.setPov({
-                heading: 270,
-                pitch: 0,
+        map.addListener("click", (e) => {
+            // click coord obj
+            let clickLocation = {
+                lat: e.latLng.lat(),
+                lng: e.latLng.lng(),
+            };
+            // marker at random coord obj
+            const svMarker = new google.maps.Marker({
+                position: svLocation,
+                map,
+                title: location.description,
             });
-            panorama.setVisible(true);
+            // marker at click coord obj
+            const clickMarker = new google.maps.Marker({
+                position: clickLocation,
+                map,
+                title: location.description,
+            });
+            // calc dist between random coord and click coord
+            console.log(getDistanceFromLatLng(clickLocation.lat, clickLocation.lng, svLocation.lat, svLocation.lng));
         });
-
     } else {
 
         console.error("Street View data not found for this location.");
     }
 }
 
-// let coverageLayer = new google.maps.StreetViewCoverageLayer();
-// coverageLayer.setMap(map);
+function getDistanceFromLatLng(lat1, lng1, lat2, lng2, miles) { // miles optional
+    if (typeof miles === "undefined") {
+        miles = false;
+    }
+
+    function deg2rad(deg) {
+        return deg * (Math.PI / 180);
+    }
+
+    function square(x) {
+        return Math.pow(x, 2);
+    }
+    var r = 6371; // radius of the earth in km
+    lat1 = deg2rad(lat1);
+    lat2 = deg2rad(lat2);
+    var lat_dif = lat2 - lat1;
+    var lng_dif = deg2rad(lng2 - lng1);
+    var a = square(Math.sin(lat_dif / 2)) + Math.cos(lat1) * Math.cos(lat2) * square(Math.sin(lng_dif / 2));
+    var d = 2 * r * Math.asin(Math.sqrt(a));
+    if (miles) {
+        return d * 0.621371;
+    } //return miles
+    else {
+        return d;
+    } //return km
+}
