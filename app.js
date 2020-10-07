@@ -185,12 +185,11 @@ let getRandomCoordinates = (arr) => {
 
 let map;
 let panorama;
-let counter = 0;
 let x = 10000000;
-let markers = [];
+let counter = 0;
 
 
-// *** maximize/minimize map UI
+// *** MIN/MAX UI ***
 let mapSize = "mid";
 document.querySelector("#maximize").addEventListener("click", () => {
     let mapFrame = document.querySelector("#map-frame");
@@ -227,14 +226,13 @@ document.querySelector("#minimize").addEventListener("click", () => {
     }
 });
 
-// ***init map and streetview
+// ***INIT MAP ***
 function initMap(x) {
-    const randomLocation = getRandomCoordinates(coordinateSelections);
-    const sv = new google.maps.StreetViewService();
+    let randomLocation = getRandomCoordinates(coordinateSelections);
+    let sv = new google.maps.StreetViewService();
     panorama = new google.maps.StreetViewPanorama(
         document.getElementById("pano")
     );
-    // Set up the map.
     map = new google.maps.Map(document.getElementById("map"), {
         center: {
             lat: 0,
@@ -244,7 +242,6 @@ function initMap(x) {
         streetViewControl: false,
         mapId: 'fd1a1dc518ebfbc1',
     });
-    // Set the initial Street View camera to the center of the map  
     sv.getPanorama({
         location: randomLocation,
         radius: x,
@@ -254,11 +251,10 @@ function initMap(x) {
 
 }
 
-// *** callback to process streetview data from random coords 
+// *** CALLBACK ***
 function processSVData(data, status) {
     if (status === "OK") {
-        const location = data.location;
-        // random coord obj
+        let location = data.location;
         svLocation = {
             lat: data.location.latLng.lat(),
             lng: data.location.latLng.lng()
@@ -281,23 +277,24 @@ function processSVData(data, status) {
 
 
         });
+        // *** CLICK MAP LISTENER ***
         map.addListener("click", (e) => {
-            // click coord obj
             let clickLocation = {
                 lat: e.latLng.lat(),
                 lng: e.latLng.lng(),
             };
-            // marker at random coord obj
-            const clickMarker = new google.maps.Marker({
+            let clickMarker = new google.maps.Marker({
                 position: clickLocation,
                 map,
                 title: location.description,
             });
             document.querySelector("#guess").disabled = false;
-            // marker at click coord obj
 
+
+
+            // *** CLICK GUESS LISTENER ***
             document.querySelector("#guess").addEventListener("click", () => {
-                const svMarker = new google.maps.Marker({
+                let svMarker = new google.maps.Marker({
                     position: svLocation,
                     map,
                     title: location.description,
@@ -307,23 +304,24 @@ function processSVData(data, status) {
                 endGame(distance);
                 let contentString = `Your guess was ${distance.toFixed(2)}km away.`;
 
-                const infowindow = new google.maps.InfoWindow({
+                let infowindow = new google.maps.InfoWindow({
                     content: contentString,
                 });
                 infowindow.open(map, svMarker);
                 infowindow.setPosition(svLocation);
-                const distancePath = new google.maps.Polyline({
-                    path: [clickLocation, svLocation],
+                console.log(`the array of doom: ${clickLocation}, ${svLocation}`)
+                let distancePath = new google.maps.Polyline({
                     geodesic: false,
                     strokeColor: "#FF0000",
                     strokeOpacity: 1.0,
                     strokeWeight: 2,
                 });
                 distancePath.setMap(map);
+                distancePath.setPath([clickLocation, svLocation])
+                console.log(`1 ${(distancePath.getPath().getArray().toString())}`);
                 document.querySelector("#play-again").style.display = "block";
                 document.querySelector("#guess").style.display = "none";
                 document.querySelector("#play-again").addEventListener("click", () => {
-                    console.log(x);
                     reset(distancePath, svMarker, clickMarker);
                     initMap(x);
                 });
@@ -343,7 +341,7 @@ function processSVData(data, status) {
     }
 }
 
-// ***get distance in km from coordinates
+// ***HAVERSINE
 function haversine(lat1, lng1, lat2, lng2, miles) { // miles optional
     if (typeof miles === "undefined") {
         miles = false;
@@ -383,15 +381,16 @@ let endGame = (distance) => {
     document.querySelector("#winner-text").innerText = `Your guess was ${distance.toFixed(2)}km away.`;
 };
 
+// *** RESET / PLAY AGAIN
 let reset = (distancePath, svMarker, clickMarker) => {
     document.querySelector("#play-again").style.display = "none";
     document.querySelector("#guess").style.display = "block";
     document.querySelector("#winner-text").innerText = "";
-    distancePath.setMap(null);
-    distancePath.path = null;
-    svMarker.setMap(null);
-    clickMarker.setMap(null);
-    distancePath = null;
+    svMarker.setPosition(null);
+    clickMarker.setPosition(null);
+    distancePath.setPath([]);
+    console.log(`2 ${distancePath.getPath().getArray().toString()}`);
+
 
 }
 
