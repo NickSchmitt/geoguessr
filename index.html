@@ -2,25 +2,32 @@
 <html>
 
 <head>
-    <title>Directly Accessing Street View Data</title>
+    <title>Geoguessr</title>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+
     <script src="./app.js" defer></script>
     <script
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCBj7T8CMAzR8xOL2Rfewv-NFLP-F1JCYs&callback=initMap&libraries=&v=weekly"
         defer></script>
+
+
     <link rel="stylesheet" type="text/css" href="./style.css" />
 
 </head>
 
 <body>
     <div id="pano">
-
-        <div id="map-frame">
-            <button id="maximize">+</button>
-            <button id="minimize">-</button>
-            <div id="map"></div>
+        <p id="winner-text"></p>
+    </div>
+    <div class="game-map-frame" id="map-frame">
+        <button id="guess" disabled>Guess</button>
+        <button id="play-again">Play Again</button>
+        <div class="ui">
+            <button class="minmax" id="maximize">+</button>
+            <button class="minmax" id="minimize">-</button>
         </div>
-
+        <div id="map">
+        </div>
     </div>
 </body>
 

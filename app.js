@@ -2,7 +2,6 @@
  * Click the map to set a new location for the Street View camera.
  */
 
-
 let coordinateSelections = [{
         name: "North America",
         latitude: {
@@ -113,17 +112,17 @@ let coordinateSelections = [{
     //         max: 114,
     //     }
     // },
-    {
-        name: "Middle East",
-        latitude: {
-            min: 14,
-            max: 38
-        },
-        longitude: {
-            min: 29,
-            max: 55
-        }
-    },
+    // {
+    //     name: "Middle East",
+    //     latitude: {
+    //         min: 14,
+    //         max: 38
+    //     },
+    //     longitude: {
+    //         min: 29,
+    //         max: 55
+    //     }
+    // },
     {
         name: "South Asia",
         latitude: {
@@ -169,10 +168,10 @@ let coordinateSelections = [{
         }
     },
 
-]
+];
 
 
-function getRandomCoordinates(arr) {
+let getRandomCoordinates = (arr) => {
     let randomIndex = Math.floor(Math.random() * arr.length);
     let obj = arr[randomIndex];
     let randomLat = (Math.random() * (obj.latitude.max - obj.latitude.min) + obj.latitude.min).toFixed(5) * 1;
@@ -182,12 +181,54 @@ function getRandomCoordinates(arr) {
         lng: randomLong
     };
     return randomCoord;
-}
+};
 
 let map;
 let panorama;
+let counter = 0;
+let x = 10000000;
+let markers = [];
 
-function initMap() {
+
+// *** maximize/minimize map UI
+let mapSize = "mid";
+document.querySelector("#maximize").addEventListener("click", () => {
+    let mapFrame = document.querySelector("#map-frame");
+    if (mapSize == "mid") {
+        mapFrame.style.height = "70%";
+        mapFrame.style.width = "70%";
+        mapSize = "max";
+        document.querySelector("#maximize").disabled = false;
+
+    } else if (mapSize == "min") {
+        mapFrame.style.height = "40%";
+        mapFrame.style.width = "40%";
+        mapSize = "mid";
+        document.querySelector("#guess").style.display = "block";
+        document.querySelector("#play-again").style.display = "block";
+        document.querySelector("#minimize").disabled = false;
+
+    }
+});
+document.querySelector("#minimize").addEventListener("click", () => {
+    let mapFrame = document.querySelector("#map-frame");
+    if (mapSize == "mid") {
+        mapFrame.style.height = "15%";
+        mapFrame.style.width = "15%";
+        mapSize = "min";
+        document.querySelector("#guess").style.display = "none";
+        document.querySelector("#play-again").style.display = "none";
+
+        document.querySelector("#minimize").disabled = true;
+    } else if (mapSize == "max") {
+        mapFrame.style.height = "40%";
+        mapFrame.style.width = "40%";
+        mapSize = "mid";
+    }
+});
+
+// ***init map and streetview
+function initMap(x) {
     const randomLocation = getRandomCoordinates(coordinateSelections);
     const sv = new google.maps.StreetViewService();
     panorama = new google.maps.StreetViewPanorama(
@@ -201,17 +242,19 @@ function initMap() {
         },
         zoom: 2,
         streetViewControl: false,
+        mapId: 'fd1a1dc518ebfbc1',
     });
     // Set the initial Street View camera to the center of the map  
     sv.getPanorama({
         location: randomLocation,
-        radius: 1000000,
+        radius: x,
         preference: "nearest",
         source: "outdoor",
     }, processSVData);
 
 }
 
+// *** callback to process streetview data from random coords 
 function processSVData(data, status) {
     if (status === "OK") {
         const location = data.location;
@@ -226,6 +269,18 @@ function processSVData(data, status) {
             pitch: 0,
         });
         panorama.setVisible(true);
+        panorama.setOptions({
+            addressControl: false,
+            fullscreenControl: false,
+            zoomControlOptions: {
+                position: google.maps.ControlPosition.LEFT_CENTER
+            },
+            panControlOptions: {
+                position: google.maps.ControlPosition.LEFT_CENTER
+            },
+
+
+        });
         map.addListener("click", (e) => {
             // click coord obj
             let clickLocation = {
@@ -233,27 +288,63 @@ function processSVData(data, status) {
                 lng: e.latLng.lng(),
             };
             // marker at random coord obj
-            const svMarker = new google.maps.Marker({
-                position: svLocation,
-                map,
-                title: location.description,
-            });
-            // marker at click coord obj
             const clickMarker = new google.maps.Marker({
                 position: clickLocation,
                 map,
                 title: location.description,
             });
-            // calc dist between random coord and click coord
-            console.log(getDistanceFromLatLng(clickLocation.lat, clickLocation.lng, svLocation.lat, svLocation.lng));
+            document.querySelector("#guess").disabled = false;
+            // marker at click coord obj
+
+            document.querySelector("#guess").addEventListener("click", () => {
+                const svMarker = new google.maps.Marker({
+                    position: svLocation,
+                    map,
+                    title: location.description,
+                });
+
+                let distance = haversine(clickLocation.lat, clickLocation.lng, svLocation.lat, svLocation.lng);
+                endGame(distance);
+                let contentString = `Your guess was ${distance.toFixed(2)}km away.`;
+
+                const infowindow = new google.maps.InfoWindow({
+                    content: contentString,
+                });
+                infowindow.open(map, svMarker);
+                infowindow.setPosition(svLocation);
+                const distancePath = new google.maps.Polyline({
+                    path: [clickLocation, svLocation],
+                    geodesic: false,
+                    strokeColor: "#FF0000",
+                    strokeOpacity: 1.0,
+                    strokeWeight: 2,
+                });
+                distancePath.setMap(map);
+                document.querySelector("#play-again").style.display = "block";
+                document.querySelector("#guess").style.display = "none";
+                document.querySelector("#play-again").addEventListener("click", () => {
+                    console.log(x);
+                    reset(distancePath, svMarker, clickMarker);
+                    initMap(x);
+                });
+            });
         });
     } else {
+        counter++;
+        console.log(counter);
+        if (counter == 3) {
+            console.error("Street View data not found for this location.");
 
-        console.error("Street View data not found for this location.");
+        } else {
+            console.log("fail");
+            initMap(x * 2);
+        }
+
     }
 }
 
-function getDistanceFromLatLng(lat1, lng1, lat2, lng2, miles) { // miles optional
+// ***get distance in km from coordinates
+function haversine(lat1, lng1, lat2, lng2, miles) { // miles optional
     if (typeof miles === "undefined") {
         miles = false;
     }
@@ -280,32 +371,34 @@ function getDistanceFromLatLng(lat1, lng1, lat2, lng2, miles) { // miles optiona
     } //return km
 }
 
-let mapSize = "mid";
+let endGame = (distance) => {
+    // document.querySelector("#map-frame").style.height = "80%";
+    // document.querySelector("#map-frame").style.width = "100%";
+    // document.querySelector("#map-frame").style.bottom = "100";
+    // document.querySelector("#map-frame").style.top = "0";
+    // document.querySelector("#pano").style.display = "none";
+    // document.querySelector(".ui").style.display = "none";
+    document.querySelector("#play-again").style.display = "block";
+    document.querySelector("#guess").style.display = "none";
+    document.querySelector("#winner-text").innerText = `Your guess was ${distance.toFixed(2)}km away.`;
+};
 
-document.querySelector("#maximize").addEventListener("click", () => {
-    console.log(mapSize);
-    let mapFrame = document.querySelector("#map-frame");
-    if (mapSize == "mid") {
-        mapFrame.style.height = "70%";
-        mapFrame.style.width = "70%";
-        mapSize = "max";
-    } else if (mapSize == "min") {
-        mapFrame.style.height = "40%";
-        mapFrame.style.width = "40%";
-        mapSize = "mid";
-    }
-    console.log(mapSize);
-});
+let reset = (distancePath, svMarker, clickMarker) => {
+    document.querySelector("#play-again").style.display = "none";
+    document.querySelector("#guess").style.display = "block";
+    document.querySelector("#winner-text").innerText = "";
+    distancePath.setMap(null);
+    distancePath.path = null;
+    svMarker.setMap(null);
+    clickMarker.setMap(null);
+    distancePath = null;
 
-document.querySelector("#minimize").addEventListener("click", () => {
-    let mapFrame = document.querySelector("#map-frame");
-    if (mapSize == "mid") {
-        mapFrame.style.height = "15%";
-        mapFrame.style.width = "15%";
-        mapSize = "min";
-    } else if (mapSize == "max") {
-        mapFrame.style.height = "40%";
-        mapFrame.style.width = "40%";
-        mapSize = "mid";
-    }
-});
+}
+
+
+// function findBounds ({coords1}, {coords2})
+
+// coords 1 = { lat: x, lng: a}
+// coords 2 = {lat: y, lng: b}
+
+// sw = {lat: min(x,y), lng: min(a,b)}

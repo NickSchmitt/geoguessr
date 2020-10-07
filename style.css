@@ -7,7 +7,12 @@
     right: 0;
     z-index: 2;
     width: 40%;
-    /* border: 10px solid black; */
+}
+
+#winner-text {
+    position: absolute;
+    z-index: 2;
+    /* text-align: center; */
 }
 
 #map {
@@ -22,10 +27,33 @@
 
 }
 
-button {
-    font-size: 100;
-    width: 2em;
+/* google's compass and zoom 
+.gm-bundled-control-on-bottom {
+    left: 20px !important;
+    bottom: 200px !important;
+} */
+
+
+.minmax {
     margin: 0px 5px 5px 0px;
+}
+
+#guess {
+    display: block;
+    position: absolute;
+    bottom: 5%;
+    left: 50%;
+    z-index: 2;
+    font-size: 2em;
+}
+
+#play-again {
+    display: none;
+    position: absolute;
+    bottom: 5%;
+    left: 50%;
+    z-index: 3;
+    font-size: 2em;
 }
 
 /* Optional: Makes the sample page fill the window. */
