@@ -200,17 +200,15 @@ let mapSize = "mid";
 document.querySelector("#maximize").addEventListener("click", () => {
     let mapFrame = document.querySelector("#map-frame");
     if (mapSize == "mid") {
-        mapFrame.style.height = "70%";
-        mapFrame.style.width = "70%";
+        mapFrame.style.height = "90%";
+        mapFrame.style.width = "90%";
         mapSize = "max";
-        document.querySelector("#maximize").disabled = false;
+        document.querySelector("#maximize").disabled = true;
 
     } else if (mapSize == "min") {
         mapFrame.style.height = "40%";
         mapFrame.style.width = "40%";
         mapSize = "mid";
-        document.querySelector("#guess").style.display = "block";
-        document.querySelector("#play-again").style.display = "block";
         document.querySelector("#minimize").disabled = false;
 
     }
@@ -221,14 +219,12 @@ document.querySelector("#minimize").addEventListener("click", () => {
         mapFrame.style.height = "15%";
         mapFrame.style.width = "15%";
         mapSize = "min";
-        document.querySelector("#guess").style.display = "none";
-        document.querySelector("#play-again").style.display = "none";
-
         document.querySelector("#minimize").disabled = true;
     } else if (mapSize == "max") {
         mapFrame.style.height = "40%";
         mapFrame.style.width = "40%";
         mapSize = "mid";
+        document.querySelector("#maximize").disabled = false;
     }
 });
 
@@ -317,8 +313,8 @@ function processSVData(data, status) {
                 infowindow.setPosition(svLocation);
                 distancePath.setMap(map);
                 distancePath.setPath([clickLocation, svLocation])
-                fartypoo = findBounds(clickLocation, svLocation)
-                map.fitBounds(fartypoo)
+                bounds = findBounds(clickLocation, svLocation)
+                map.fitBounds(bounds)
                 document.querySelector("#play-again").style.display = "block";
                 document.querySelector("#guess").style.display = "none";
                 // *** *** PLAY AGAIN *** *** //

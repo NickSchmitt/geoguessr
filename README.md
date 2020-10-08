@@ -157,8 +157,8 @@ document.querySelector("#guess").addEventListener("click", () => {
                 infowindow.setPosition(svLocation);
                 distancePath.setMap(map);
                 distancePath.setPath([clickLocation, svLocation])
-                fartypoo = findBounds(clickLocation, svLocation)
-                map.fitBounds(fartypoo)
+                let bounds = findBounds(clickLocation, svLocation)
+                map.fitBounds(bounds)
                 document.querySelector("#play-again").style.display = "block";
                 document.querySelector("#guess").style.display = "none";
                 // *** *** PLAY AGAIN *** *** //
