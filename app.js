@@ -2,6 +2,8 @@
  * Click the map to set a new location for the Street View camera.
  */
 
+
+
 let coordinateSelections = [{
         name: "North America",
         latitude: {
@@ -187,6 +189,10 @@ let map;
 let panorama;
 let x = 10000000;
 let counter = 0;
+let clickMarker;
+let distancePath;
+let sv;
+let infowindow;
 
 
 // *** MIN/MAX UI ***
@@ -226,10 +232,7 @@ document.querySelector("#minimize").addEventListener("click", () => {
     }
 });
 
-// ***INIT MAP ***
-function initMap(x) {
-    let randomLocation = getRandomCoordinates(coordinateSelections);
-    let sv = new google.maps.StreetViewService();
+function startGame(x) {
     panorama = new google.maps.StreetViewPanorama(
         document.getElementById("pano")
     );
@@ -241,7 +244,23 @@ function initMap(x) {
         zoom: 2,
         streetViewControl: false,
         mapId: 'fd1a1dc518ebfbc1',
+        fullscreenControl: false,
+        disableDefaultUI: true,
     });
+    clickMarker = new google.maps.Marker()
+    svMarker = new google.maps.Marker()
+    distancePath = new google.maps.Polyline()
+    infowindow = new google.maps.InfoWindow({
+        disableAutoPan: true
+    })
+    initMap(x);
+}
+
+
+// ***INIT MAP ***
+function initMap(x, sv) {
+    sv = new google.maps.StreetViewService();
+    let randomLocation = getRandomCoordinates(coordinateSelections);
     sv.getPanorama({
         location: randomLocation,
         radius: x,
@@ -255,10 +274,6 @@ function initMap(x) {
 function processSVData(data, status) {
     if (status === "OK") {
         let location = data.location;
-        svLocation = {
-            lat: data.location.latLng.lat(),
-            lng: data.location.latLng.lng()
-        };
         panorama.setPano(location.pano);
         panorama.setPov({
             heading: 270,
@@ -283,44 +298,30 @@ function processSVData(data, status) {
                 lat: e.latLng.lat(),
                 lng: e.latLng.lng(),
             };
-            let clickMarker = new google.maps.Marker({
-                position: clickLocation,
-                map,
-                title: location.description,
-            });
+            let svLocation = {
+                lat: data.location.latLng.lat(),
+                lng: data.location.latLng.lng()
+            };
+            clickMarker.setPosition(clickLocation)
+            clickMarker.setMap(map)
             document.querySelector("#guess").disabled = false;
-
-
-
             // *** CLICK GUESS LISTENER ***
             document.querySelector("#guess").addEventListener("click", () => {
-                let svMarker = new google.maps.Marker({
-                    position: svLocation,
-                    map,
-                    title: location.description,
-                });
-
+                svMarker.setPosition(svLocation)
+                svMarker.setMap(map)
                 let distance = haversine(clickLocation.lat, clickLocation.lng, svLocation.lat, svLocation.lng);
                 endGame(distance);
                 let contentString = `Your guess was ${distance.toFixed(2)}km away.`;
-
-                let infowindow = new google.maps.InfoWindow({
-                    content: contentString,
-                });
+                infowindow.setContent(contentString)
                 infowindow.open(map, svMarker);
                 infowindow.setPosition(svLocation);
-                console.log(`the array of doom: ${clickLocation}, ${svLocation}`)
-                let distancePath = new google.maps.Polyline({
-                    geodesic: false,
-                    strokeColor: "#FF0000",
-                    strokeOpacity: 1.0,
-                    strokeWeight: 2,
-                });
                 distancePath.setMap(map);
                 distancePath.setPath([clickLocation, svLocation])
-                console.log(`1 ${(distancePath.getPath().getArray().toString())}`);
+                fartypoo = findBounds(clickLocation, svLocation)
+                map.fitBounds(fartypoo)
                 document.querySelector("#play-again").style.display = "block";
                 document.querySelector("#guess").style.display = "none";
+                // *** *** PLAY AGAIN *** *** //
                 document.querySelector("#play-again").addEventListener("click", () => {
                     reset(distancePath, svMarker, clickMarker);
                     initMap(x);
@@ -329,12 +330,10 @@ function processSVData(data, status) {
         });
     } else {
         counter++;
-        console.log(counter);
         if (counter == 3) {
             console.error("Street View data not found for this location.");
 
         } else {
-            console.log("fail");
             initMap(x * 2);
         }
 
@@ -389,15 +388,24 @@ let reset = (distancePath, svMarker, clickMarker) => {
     svMarker.setPosition(null);
     clickMarker.setPosition(null);
     distancePath.setPath([]);
-    console.log(`2 ${distancePath.getPath().getArray().toString()}`);
+    infowindow.setMap(null)
+    map.setZoom(2)
 
 
 }
 
+let findBounds = (clickLocation, svLocation) => {
+    let latArr = [clickLocation.lat, svLocation.lat]
+    latArrSorted = latArr.sort((a, b) => a - b)
+    let lngArr = [clickLocation.lng, svLocation.lng]
+    lngArrSorted = lngArr.sort((a, b) => a - b);
+    boundsLiteral = {
+        south: latArrSorted[0],
+        west: lngArrSorted[0],
+        north: latArrSorted[1],
+        east: latArrSorted[1],
+    }
+    console.log(boundsLiteral)
 
-// function findBounds ({coords1}, {coords2})
-
-// coords 1 = { lat: x, lng: a}
-// coords 2 = {lat: y, lng: b}
-
-// sw = {lat: min(x,y), lng: min(a,b)}
+    return boundsLiteral
+}
