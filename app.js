@@ -386,6 +386,7 @@ let reset = (distancePath, svMarker, clickMarker) => {
     distancePath.setPath([]);
     infowindow.setMap(null)
     map.setZoom(2)
+    map.setCenter({lat: 0, lng: 0})
 
 
 }
